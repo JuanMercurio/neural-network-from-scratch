@@ -7,5 +7,9 @@ all:
 	mkdir -p build
 	$(CC) main.cpp -o $(BIN) $(LIBRARIES)
 
+run:
+	make all
+	./$(BIN)
+
 clean: 
 	rm -fr build
