@@ -1,6 +1,11 @@
 CC=gcc
 BUILD=./build/
 BIN=$(BUILD)test
+LIBRARIES= -lm
 
 all:
-	$(CC) main.cpp -o $(BIN)
+	mkdir -p build
+	$(CC) main.cpp -o $(BIN) $(LIBRARIES)
+
+clean: 
+	rm -fr build
