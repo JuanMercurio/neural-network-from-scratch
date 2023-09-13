@@ -7,7 +7,7 @@ typedef struct Neuron {
 } Neuron;
 
 float sigmoid(float x) {
-	return 1.0 / (1 + std::exp(-x));
+	return 1.0 / (1 + exp(-x));
 }
 
 float feed_foward(Neuron n, float input) {
@@ -21,18 +21,51 @@ float cost_function(float value, float prediction) {
 	return cost;
 }
 
+float sigmoid_derivative(float x) {
+	return exp(-x) / pow(1 + exp(-x), 2);
+}
+
+float cost_derivative(float value, float prediction) {
+	return -2 * (value - prediction);
+}
+
+float feed_foward_weight_derivative(Neuron neuron, float input) {
+	return input;
+}
+
+float feed_foward_bias_derivative(Neuron neuron, float input) {
+	return 1;
+}
+
+float weight_change_ratio(Neuron neuron, float value, float prediction, float input) {
+	return  cost_derivative(value, prediction) * 
+		sigmoid_derivative(prediction) * 
+		feed_foward_weight_derivative(neuron, input);
+}
+
+float bias_change_ratio(Neuron neuron, float value, float prediction, float input) {
+	return  cost_derivative(value, prediction) * 
+		sigmoid_derivative(prediction) * 
+		feed_foward_bias_derivative(neuron, input);
+}
+
 int main (int argc, char *argv[]) {
 
-	float input = 3.0;
-	Neuron n = {3.0, 2.0};
+	float input = 3;
+	Neuron n = {-.4, 2.05};
 
-	float value = 3.0;
+	float value = 0.7;
 	float prediction = feed_foward(n, input);
 	float cost = cost_function(value, prediction);
+
+	float wcr = weight_change_ratio(n,  value,  prediction,  input);
+	float bcr = bias_change_ratio(n,  value,  prediction,  input);
 
 	printf("The prediction is: %f\n", prediction);
 	printf("the value is %f\n", value);
 	printf("The cost is: %f\n", cost);
+	printf("The weight change ratio is: %f\n", wcr);
+	printf("The bias change ratio is: %f\n", bcr);
 
 	return 0;
 }
