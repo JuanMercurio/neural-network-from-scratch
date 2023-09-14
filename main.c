@@ -1,5 +1,8 @@
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef struct Neuron {
 	float weight;
@@ -49,23 +52,63 @@ float bias_change_ratio(Neuron neuron, float value, float prediction, float inpu
 		feed_foward_bias_derivative(neuron, input);
 }
 
+float random_from_0_to_1() {
+	return (float) rand() / RAND_MAX; 
+}
+
+#define MINIMUM_COST .0002
+
 int main (int argc, char *argv[]) {
 
-	float input = 3;
-	Neuron n = {-.4, 2.05};
+	time_t seed;
+	srand(time(&seed));
 
-	float value = 0.7;
+	float input = random_from_0_to_1();
+
+	Neuron n = {
+		random_from_0_to_1(), 
+		random_from_0_to_1()
+	};
+
 	float prediction = feed_foward(n, input);
+	float value = random_from_0_to_1();
 	float cost = cost_function(value, prediction);
 
-	float wcr = weight_change_ratio(n,  value,  prediction,  input);
-	float bcr = bias_change_ratio(n,  value,  prediction,  input);
+	while (cost > MINIMUM_COST) {
 
-	printf("The prediction is: %f\n", prediction);
-	printf("the value is %f\n", value);
-	printf("The cost is: %f\n", cost);
-	printf("The weight change ratio is: %f\n", wcr);
-	printf("The bias change ratio is: %f\n", bcr);
+		float wcr = weight_change_ratio(n,  value,  prediction,  input);
+		float bcr = bias_change_ratio(n,  value,  prediction,  input);
+
+		printf("The prediction is: %f\n", prediction);
+		printf("the value is %f\n", value);
+		printf("The cost is: %f\n", cost);
+		printf("The weight change ratio is: %f\n", wcr);
+		printf("The bias change ratio is: %f\n", bcr);
+
+		float weight_change;
+		float bias_change;
+
+		printf("Enter a value to add to the weight: ");
+		scanf("%f", &weight_change);
+		printf("Enter a value to add to the weight: ");
+		scanf("%f", &bias_change);
+
+		printf("\n");
+		printf("----------------------------\n");
+		printf("\n");
+
+		n.bias += bias_change;
+		n.weight += weight_change;
+		
+		prediction = feed_foward(n, input);
+		cost = cost_function(value, prediction);
+	}
+
+		printf("The cost is: %f\n", cost);
+		printf("the value is %f\n", value);
+		printf("The prediction is: %f\n", prediction);
+		printf("\n");
+
 
 	return 0;
 }
