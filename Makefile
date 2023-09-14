@@ -5,7 +5,7 @@ LIBRARIES= -lm
 
 all:
 	mkdir -p build
-	$(CC) main.cpp -o $(BIN) $(LIBRARIES)
+	$(CC) main.c -o $(BIN) $(LIBRARIES)
 
 run:
 	make all
