@@ -1,11 +1,11 @@
 CC=gcc
 BUILD=./build/
 BIN=$(BUILD)test
-LIBRARIES= -lm
+LIBRARIES= -lm -lstdc++
 
 all:
 	mkdir -p build
-	$(CC) main.c -o $(BIN) $(LIBRARIES)
+	$(CC) main.cpp -o $(BIN) $(LIBRARIES)
 
 run:
 	make all
