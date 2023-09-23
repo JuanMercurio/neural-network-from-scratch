@@ -5,7 +5,7 @@ LIBRARIES= -lm -lstdc++
 
 all:
 	mkdir -p build
-	$(CC) main.cpp -o $(BIN) $(LIBRARIES)
+	$(CC) main.c  -ggdb -pedantic -Wall -o $(BIN) $(LIBRARIES)
 
 run:
 	make all
