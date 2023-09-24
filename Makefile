@@ -11,5 +11,8 @@ run:
 	make all
 	./$(BIN)
 
+d: 
+	gdb ./build/test
+
 clean: 
 	rm -fr build
