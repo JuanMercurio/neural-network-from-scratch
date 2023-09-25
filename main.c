@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,6 +17,14 @@ typedef struct {
   int matrix_weight_count;
 } NeuralNetwork;
 
+void matrix_times_scalar(Matrix *matrix, float scalar) {
+  for (int i = 0; i < matrix->rows; i++) {
+    for (int j = 0; j < matrix->rows; j++) {
+      matrix->data[i][j] /= scalar;
+    }
+  }
+}
+
 // should be freed
 Matrix *matrix_allocate(int row_count, int col_count) {
   Matrix *matrix = malloc(sizeof(Matrix));
@@ -33,13 +42,17 @@ Matrix *matrix_allocate(int row_count, int col_count) {
 
 //  -----------------------------------------------------
 
-void weights_initilize(float **weights, int row_count, int col_count) {
+void weights_initilize(Matrix *matrix) {
 
-  for (int i = 0; i < row_count; i++) {
-    for (int j = 0; j < col_count; j++) {
-      weights[i][j] = (float)rand() / RAND_MAX; // random_number();
+  for (int i = 0; i < matrix->rows; i++) {
+    for (int j = 0; j < matrix->cols; j++) {
+      matrix->data[i][j] =
+          (float)rand() / RAND_MAX; // random_number between 0 and 1 ;
     }
   }
+
+  // normalize values with the sqrt of the amount of weights
+  matrix_times_scalar(matrix, sqrt((double)matrix->rows * matrix->cols));
 }
 
 NeuralNetwork create_neural_network(int layers[], int len_layers,
@@ -57,7 +70,7 @@ NeuralNetwork create_neural_network(int layers[], int len_layers,
 
     Matrix *m = matrix_allocate(row_count, col_count);
 
-    weights_initilize(m->data, m->rows, m->cols);
+    weights_initilize(m);
     weights[i] = m;
 
     count_matrix++;
@@ -69,7 +82,7 @@ NeuralNetwork create_neural_network(int layers[], int len_layers,
 
   Matrix *last_weights = matrix_allocate(row_count, col_count);
 
-  weights_initilize(last_weights->data, last_weights->rows, last_weights->cols);
+  weights_initilize(last_weights);
   weights[len_layers - 2] = last_weights;
   count_matrix++;
 
