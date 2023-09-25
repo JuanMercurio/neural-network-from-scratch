@@ -42,17 +42,34 @@ Matrix *matrix_allocate(int row_count, int col_count) {
 
 //  -----------------------------------------------------
 
+void insert_ones_column(Matrix *m) {
+  for (int i = 0; i < m->rows; i++) {
+    m->data[i] = realloc(m->data[i], (m->rows + 1) * sizeof(float *));
+    m->data[i][m->cols] = 1.0;
+  }
+  m->cols++;
+}
+
 void weights_initilize(Matrix *matrix) {
 
   for (int i = 0; i < matrix->rows; i++) {
     for (int j = 0; j < matrix->cols; j++) {
-      matrix->data[i][j] =
-          (float)rand() / RAND_MAX; // random_number between 0 and 1 ;
+      matrix->data[i][j] = (float)rand() / RAND_MAX;
+      // random_number between 0 and 1 ;
+      // TODO: BEST random between
     }
   }
 
   // normalize values with the sqrt of the amount of weights
   matrix_times_scalar(matrix, sqrt((double)matrix->rows * matrix->cols));
+}
+
+float sigmoid(float x) { return 1.0 / (1 - exp(-x)); }
+float sigmoid_derivative(float x) { return x * (1 - x); }
+
+void fit(Matrix *inputs, Matrix *outputs, int epochs, int display_update) {
+
+  insert_ones_column(inputs);
 }
 
 NeuralNetwork create_neural_network(int layers[], int len_layers,
