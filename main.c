@@ -87,17 +87,23 @@ float relu_derivative(float x) {
 }
 
 void NN_free_activations(NeuralNetwork *nn) {
-  for (int i = 0; i < nn->matrix_weight_count; i++) {
-    free(nn->activations[i]->data);
-    free(nn->activations[i]);
+  for (int i = 0; i < nn->matrix_weight_count + 1; i++) {
+    // free(nn->activations[i]->data);
+    // free(nn->activations[i]);
+    matrix_free(nn->activations[i]);
   }
+  free(nn->activations);
+  nn->activations = NULL;
 }
 
 void NN_free_deltas(NeuralNetwork *nn) {
   for (int i = 0; i < nn->matrix_weight_count; i++) {
-    free(nn->deltas[i]->data);
-    free(nn->deltas[i]);
+    // free(nn->deltas[i]->data);
+    // free(nn->deltas[i]);
+    matrix_free(nn->deltas[i]);
   }
+  free(nn->deltas);
+  nn->deltas = NULL;
 }
 
 Matrix *predict(NeuralNetwork *, Matrix *);
@@ -108,11 +114,13 @@ float *predict_list(NeuralNetwork *nn, Matrix *inputs) {
 
   for (int i = 0; i < inputs->rows; i++) {
     input = matrix_create(1, inputs->cols);
-    for (int j = 0; j < inputs->rows; j++) {
+    for (int j = 0; j < inputs->cols; j++) {
       input->data[0][j] = inputs->data[i][j];
     }
     Matrix *pred = predict(nn, input);
+    matrix_free(input);
     predictions[i] = pred->data[0][0];
+    matrix_free(pred);
   }
   return predictions;
 }
@@ -126,12 +134,15 @@ float mse(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs) {
 
   mse /= outputs->rows;
 
+  free(predictions);
+
   return mse;
 }
 
 void suffle_data(Matrix *m, Matrix *m2) {
   for (int i = 0; i < m->rows; i++) {
     for (int j = 0; j < m->cols; j++) {
+      // this is wrong we need to allcoate the *temp
       int index = ((int)rand() / INT_MAX) % m->rows;
       float *temp = m->data[i];
       m->data[i] = m->data[index];
@@ -143,18 +154,21 @@ void suffle_data(Matrix *m, Matrix *m2) {
   }
 }
 
+// this can reuse memory and be more optimal (as well as continuous memory in
+// all matrix)
 void NN_create_activations(NeuralNetwork *nn, int activation_count,
                            Matrix *input) {
 
-  int activation_size = (sizeof(Matrix *) * activation_count);
-  nn->activations = malloc(activation_size);
+  int activation_size = activation_count * sizeof(Matrix *);
+  Matrix **activations = malloc(activation_size);
+  nn->activations = activations;
   nn->activations[0] = matrix_dup(input);
-
   // feedfoward
   for (int i = 0; i < nn->matrix_weight_count; i++) {
 
     Matrix *net = matrix_dot(nn->activations[i], nn->list_weights[i]);
     Matrix *out = matrix_transform(net, sigmoid);
+    matrix_free(net);
     // Matrix *out = matrix_transform(net, relu);
 
     nn->activations[i + 1] = out;
@@ -173,13 +187,11 @@ void NN_create_activations(NeuralNetwork *nn, int activation_count,
 void NN_create_deltas(NeuralNetwork *nn, int activation_count,
                       Matrix *outputs) {
 
+  int deltas_size = (activation_count - 1) * sizeof(Matrix *);
   Matrix *error_derivative =
       matrix_substract(nn->activations[nn->matrix_weight_count], outputs);
-  // matrix_operation(nn->activations[nn->matrix_weight_count], outputs,
-  // substract);
-  // matrix_diff(outputs, nn->activations[nn->matrix_weight_count]);
 
-  Matrix **deltas = malloc(sizeof(Matrix *) * activation_count);
+  Matrix **deltas = malloc(deltas_size);
 
   Matrix *d = matrix_element_operation(nn->activations[nn->matrix_weight_count],
                                        sigmoid_derivative);
@@ -189,6 +201,7 @@ void NN_create_deltas(NeuralNetwork *nn, int activation_count,
   // Matrix *delta =
   // matrix_element_to_element_operation(d, error_derivative, times);
   Matrix *delta = matrix_times(d, error_derivative);
+  matrix_free(error_derivative);
   matrix_free(d);
   deltas[0] = delta;
 
@@ -201,8 +214,9 @@ void NN_create_deltas(NeuralNetwork *nn, int activation_count,
         nn->activations[activation_count - 2 - i], sigmoid_derivative);
     // nn->activations[activation_count - 2 - i], relu_derivative);
     // delta = matrix_element_to_element_operation(delta, d, times);
-    delta = matrix_times(delta, d);
-    deltas[i + 1] = delta;
+    Matrix *new_delta = matrix_times(delta, d);
+    matrix_free(delta);
+    deltas[i + 1] = new_delta;
 
     matrix_free(d);
     matrix_free(transpose_weight);
@@ -243,24 +257,16 @@ Matrix *predict(NeuralNetwork *nn, Matrix *x) {
     insert_ones_column(x);
   }
 
-  Matrix *p = NULL;
-  Matrix *dot = matrix_dot(x, nn->list_weights[0]);
-  p = matrix_transform(dot, sigmoid);
-  // p = matrix_transform(dot,  relu);
-  matrix_free(dot);
-  // here we dont free x because x is the inputs
-  x = p;
+  Matrix *activations = matrix_dup(x);
 
-  for (int i = 1; i < nn->matrix_weight_count; i++) {
-    dot = matrix_dot(x, nn->list_weights[i]);
-    p = matrix_transform(dot, sigmoid);
+  for (int i = 0; i < nn->matrix_weight_count; i++) {
+    Matrix *dot = matrix_dot(activations, nn->list_weights[i]);
+    matrix_free(activations);
+    activations = matrix_element_operation(dot, sigmoid);
     matrix_free(dot);
-    // p = matrix_transform(dot, relu);
-    matrix_free(x);
-    x = p;
   }
 
-  return p;
+  return activations;
 }
 
 void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *outputs) {
@@ -279,9 +285,19 @@ void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *outputs) {
   // printf("%f %f = %f | Predicted: %f\n", input->data[0][0],
   // input->data[0][1],
   //        outputs->data[0][0], prediction->data[0][0]);
-  //
-  NN_free_deltas(nn);
+
   NN_free_activations(nn);
+  NN_free_deltas(nn);
+}
+
+Matrix *matrix_get_rows(Matrix *m, int begining, int end) {
+  Matrix *final = matrix_create(end - begining, m->cols);
+  for (int i = 0; i < end - begining; i++) {
+    for (int j = 0; j < m->cols; j++) {
+      final->data[i][j] = m->data[begining + i][j];
+    }
+  }
+  return final;
 }
 
 void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
@@ -293,14 +309,12 @@ void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
     suffle_data(inputs, outputs);
     for (int j = 0; j < inputs->rows; j++) {
 
-      Matrix *input = matrix_create(1, inputs->cols);
-      input->data[0] = inputs->data[j];
-      Matrix *target = matrix_create(1, outputs->cols);
-      target->data[0] = outputs->data[j];
+      Matrix *input = matrix_get_rows(inputs, j, j + 1);
+      Matrix *target = matrix_get_rows(outputs, j, j + 1);
 
       fit_partial(nn, input, target);
 
-      // matrix_free(input); this is freed when we free the activations
+      matrix_free(input);
       matrix_free(target);
     }
     if (i % display_update == 0) {
@@ -313,7 +327,8 @@ void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
 char *description_create(int *layers, int len_layers) {
 
   char *desc = malloc(sizeof(char) * 2 * len_layers);
-  char *a = malloc(sizeof(char));
+  desc[0] = '\0';
+  char a[10] = " ";
 
   sprintf(a, "%d", layers[0]);
   strcat(desc, a);
@@ -373,11 +388,18 @@ NeuralNetwork create_neural_network(int layers[], int len_layers,
   return nn;
 }
 
+void NN_free_weights(NeuralNetwork nn) {
+  for (int i = 0; i < nn.matrix_weight_count; i++) {
+    matrix_free(nn.list_weights[i]);
+  }
+  free(nn.list_weights);
+}
+
 int main(int argc, char *argv[]) {
 
   float learning_rate = 0.2;
   int epochs = 20000;
-  int display_update = 100;
+  int display_update = 200;
   int layers[] = {2, 2, 1};
   print = 0;
 
@@ -400,6 +422,12 @@ int main(int argc, char *argv[]) {
 
   NeuralNetwork nn = create_neural_network(layers, len_layers, learning_rate);
   fit(&nn, inputs, outputs, epochs, display_update);
+
+  print_desc(nn);
+  matrix_free(outputs);
+  matrix_free(inputs);
+  free(nn.desc);
+  NN_free_weights(nn);
 
   return 0;
 }

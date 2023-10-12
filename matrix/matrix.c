@@ -7,9 +7,10 @@ float times(float x, float y) { return x * y; }
 float add(float x, float y) { return x + y; }
 float identity(float x) { return x; }
 float substract(float a, float b) { return a - b; }
+float zero(float z) { return 0; }
 
 Matrix *matrix_create(int row_count, int col_count) {
-  Matrix *matrix = malloc(sizeof(Matrix));
+  Matrix *matrix = calloc(1, sizeof(Matrix));
 
   matrix->data = malloc(row_count * sizeof(float *));
   matrix->rows = row_count;
@@ -19,10 +20,15 @@ Matrix *matrix_create(int row_count, int col_count) {
     matrix->data[i] = malloc(sizeof(float) * col_count);
   }
 
+  // matrix_inplace_element_operation(matrix, zero);
+
   return matrix;
 }
 
 void matrix_free(Matrix *m) {
+  for (int i = 0; i < m->rows; i++) {
+    free(m->data[i]);
+  }
   free(m->data);
   free(m);
   m = NULL;
@@ -62,6 +68,7 @@ void matrix_print(Matrix *m) {
 Matrix *matrix_transform(Matrix *m, float (*transfomer)(float)) {
 
   Matrix *final = matrix_create(m->rows, m->cols);
+
   for (int i = 0; i < m->rows; i++) {
     for (int j = 0; j < m->cols; j++) {
       final->data[i][j] = transfomer(m->data[i][j]);

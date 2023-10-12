@@ -16,6 +16,9 @@ run:
 d: 
 	gdb ./build/test
 
+v: all
+	valgrind  --track-origins=yes --leak-check=full --log-file="valgrind.log" $(BIN)
+
 clean: 
 	rm -fr build
 
