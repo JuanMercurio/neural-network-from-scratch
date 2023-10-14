@@ -9,13 +9,13 @@
 
 int print;
 
-void list_forEach(Matrix **list, int size, void(procedure)(Matrix *)) {
+void list_forEach(Matrix **list, int size, void (*procedure)(Matrix *)) {
   for (int i = 0; i < size; i++) {
     procedure(list[i]);
   }
 }
 
-void list_free(Matrix **list, int size, void(destructor)(Matrix *)) {
+void list_free(Matrix **list, int size, void (*destructor)(Matrix *)) {
   for (int i = 0; i < size; i++) {
     destructor(list[i]);
   }
@@ -32,13 +32,6 @@ double random_uniform_distribution_number(float min, float max) {
 
   // return random;
   return final;
-}
-
-void print_deltas(NeuralNetwork nn) {
-  printf("Deltas:\n");
-  for (int i = 0; i < nn.matrix_weight_count; i++) {
-    matrix_print(nn.deltas[i]);
-  }
 }
 
 void print_desc(NeuralNetwork *nn) {
@@ -102,19 +95,31 @@ float *predict_list(NeuralNetwork *nn, Matrix *inputs) {
   }
   return predictions;
 }
-float mse(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs) {
-  float *predictions = predict_list(nn, inputs);
-  float mse = 0;
-  for (int i = 0; i < outputs->rows; i++) {
-    float error = predictions[i] - outputs->data[i][0];
-    mse += error * error;
+
+float mse(NeuralNetwork *nn, Matrix *X, Matrix *Y) {
+  Matrix *prediction = predict(nn, X);
+  float error = 0;
+  for (int i = 0; i < prediction->rows; i++) {
+    error += pow(prediction->data[i][0] - Y->data[i][0], 2);
   }
 
-  mse /= outputs->rows;
+  error /= prediction->cols;
+  return error;
+}
 
-  free(predictions);
+float calculate_loss(NeuralNetwork *nn, Matrix *inputs, Matrix *targets) {
 
-  return mse;
+  float network_error = 0;
+  for (int i = 0; i < inputs->rows; i++) {
+    Matrix *input = matrix_get_rows(inputs, i, 1);
+    Matrix *target = matrix_get_rows(targets, i, 1);
+    network_error += nn->loss_function(nn, input, target);
+    // network_error += mse(nn, input, target);
+  }
+
+  network_error /= targets->rows;
+
+  return network_error;
 }
 
 void suffle_data(Matrix *m, Matrix *m2) {
@@ -278,16 +283,6 @@ void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *outputs) {
   list_free(deltas, nn->matrix_weight_count, matrix_free);
 }
 
-Matrix *matrix_get_rows(Matrix *m, int begining, int end) {
-  Matrix *final = matrix_create(end - begining, m->cols);
-  for (int i = 0; i < end - begining; i++) {
-    for (int j = 0; j < m->cols; j++) {
-      final->data[i][j] = m->data[begining + i][j];
-    }
-  }
-  return final;
-}
-
 void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
          int display_update) {
 
@@ -306,7 +301,7 @@ void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
       matrix_free(target);
     }
     if (i % display_update == 0) {
-      float loss = mse(nn, inputs, outputs);
+      float loss = calculate_loss(nn, inputs, outputs);
       printf("Current loss: %g\n", loss);
     }
   }
@@ -373,8 +368,7 @@ NeuralNetwork *neural_network_create(int layers[], int len_layers,
   nn->list_weights = weights;
   nn->learning_rate = learning_rate;
   nn->matrix_weight_count = count_matrix;
-  nn->activations = NULL;
-  nn->deltas = NULL;
+  nn->loss_function = mse;
 
   if (print == 1) {
     print_weights(nn);

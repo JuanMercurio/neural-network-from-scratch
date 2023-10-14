@@ -3,14 +3,15 @@
 
 #include "../matrix/matrix.h"
 
-typedef struct {
+typedef struct NeuralNetwork NeuralNetwork;
+
+struct NeuralNetwork {
   int matrix_weight_count;
-  Matrix **activations;
   Matrix **list_weights;
-  Matrix **deltas;
   char *desc;
   float learning_rate;
-} NeuralNetwork;
+  float (*loss_function)(NeuralNetwork *nn, Matrix* Y, Matrix * target );
+};
 
 NeuralNetwork *neural_network_create(int layers[], int len_layers,
                                      float learning_rate);

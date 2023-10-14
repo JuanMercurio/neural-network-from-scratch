@@ -155,6 +155,16 @@ Matrix *matrix_element_operation(Matrix *m, float(operation(float))) {
   return final;
 }
 
+Matrix *matrix_get_rows(Matrix *m, int begining, int end) {
+  Matrix *final = matrix_create(end - begining, m->cols);
+  for (int i = 0; i < end - begining; i++) {
+    for (int j = 0; j < m->cols; j++) {
+      final->data[i][j] = m->data[begining + i][j];
+    }
+  }
+  return final;
+}
+
 Matrix *matrix_element_to_element_operation(Matrix *m1, Matrix *m2,
                                             float (*operation)(float, float)) {
 

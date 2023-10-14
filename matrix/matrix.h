@@ -15,6 +15,7 @@ Matrix *matrix_transform(Matrix *m, float (*transfomer)(float));
 Matrix *matrix_scale(Matrix *m, float scalar);
 Matrix *matrix_transpose(Matrix *m);
 Matrix *matrix_dup(Matrix *m);
+Matrix *matrix_get_rows(Matrix *m, int begining, int end);
 
 void matrix_add_column(Matrix *m, int value);
 void matrix_free(Matrix*);
