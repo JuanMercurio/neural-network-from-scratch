@@ -7,7 +7,7 @@
 
 #include "nn.h"
 
-int print;
+int print = 1;
 
 void list_forEach(Matrix **list, int size, void (*procedure)(Matrix *)) {
   for (int i = 0; i < size; i++) {
@@ -176,41 +176,28 @@ Matrix **NN_create_deltas(NeuralNetwork *nn, Matrix **activations,
                           int activation_count, Matrix *outputs) {
 
   int deltas_size = (activation_count - 1) * sizeof(Matrix *);
+
+  Matrix **deltas = malloc(deltas_size);
   Matrix *error_derivative =
       matrix_substract(activations[nn->matrix_weight_count], outputs);
 
-  Matrix **deltas = malloc(deltas_size);
+  for (int i = 0; i < nn->matrix_weight_count; i++) {
 
-  Matrix *d = matrix_element_operation(activations[nn->matrix_weight_count],
-                                       sigmoid_derivative);
-  // Matrix *d =
-  // matrix_operation_single(nn->activations[nn->matrix_weight_count],
-  //                                     relu_derivative);
-  // Matrix *delta =
-  // matrix_element_to_element_operation(d, error_derivative, times);
-  Matrix *delta = matrix_times(d, error_derivative);
-  matrix_free(error_derivative);
-  matrix_free(d);
-  deltas[0] = delta;
+    Matrix *activation_derivative = matrix_element_operation(
+        activations[nn->matrix_weight_count - i], sigmoid_derivative);
+    Matrix *act_err_derivative =
+        matrix_times(activation_derivative, error_derivative);
+    Matrix *activations_l_minus_1_T =
+        matrix_transpose(activations[nn->matrix_weight_count - i - 1]);
+    Matrix *delta = matrix_dot(activations_l_minus_1_T, act_err_derivative);
 
-  for (int i = 0; i < activation_count - 2; i++) {
-
-    Matrix *transpose_weight =
-        matrix_transpose(nn->list_weights[nn->matrix_weight_count - i - 1]);
-    Matrix *delta = matrix_dot(deltas[i], transpose_weight);
-    Matrix *d = matrix_element_operation(activations[activation_count - 2 - i],
-                                         sigmoid_derivative);
-    // nn->activations[activation_count - 2 - i], relu_derivative);
-    // delta = matrix_element_to_element_operation(delta, d, times);
-    Matrix *new_delta = matrix_times(delta, d);
-    matrix_free(delta);
-    deltas[i + 1] = new_delta;
-
-    matrix_free(d);
-    matrix_free(transpose_weight);
+    // matrix_free(error_derivative);
+    error_derivative = matrix_transpose(delta);
+    matrix_free(activation_derivative);
+    matrix_free(activations_l_minus_1_T);
+    deltas[nn->matrix_weight_count - 1 - i] = delta;
   }
 
-  // nn->deltas = deltas;
   if (print == 1) {
     list_forEach(deltas, nn->matrix_weight_count, matrix_print);
   }
@@ -222,20 +209,15 @@ void NN_udpate_weights(NeuralNetwork *nn, Matrix **activations,
                        Matrix **deltas) {
 
   for (int i = 0; i < nn->matrix_weight_count; i++) {
-    Matrix *activations_transpose = matrix_transpose(activations[i]);
-    Matrix *dot = matrix_dot(activations_transpose,
-                             deltas[nn->matrix_weight_count - 1 - i]);
 
-    Matrix *final_change = matrix_scale(dot, -nn->learning_rate);
+    Matrix *final_change = matrix_scale(deltas[i], -nn->learning_rate);
     if (print == 1) {
       printf("final changes to weights");
       matrix_print(final_change);
     }
     matrix_add_inplace(nn->list_weights[i], final_change);
 
-    matrix_free(activations_transpose);
     matrix_free(final_change);
-    matrix_free(dot);
   }
   if (print == 1) {
     print_weights(nn);

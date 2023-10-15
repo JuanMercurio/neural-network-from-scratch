@@ -4,7 +4,7 @@
 int main(int argc, char *argv[]) {
 
   float learning_rate = 0.2;
-  int epochs = 20000;
+  int epochs = 1;
   int display_update = 200;
   int layers[] = {2, 2, 1};
 

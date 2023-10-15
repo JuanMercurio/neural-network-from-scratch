@@ -13,6 +13,10 @@ struct NeuralNetwork {
   float (*loss_function)(NeuralNetwork *nn, Matrix* Y, Matrix * target );
 };
 
+enum LossFunction {
+  MSE,
+};
+
 NeuralNetwork *neural_network_create(int layers[], int len_layers,
                                      float learning_rate);
 
