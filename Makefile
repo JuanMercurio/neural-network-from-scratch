@@ -20,7 +20,7 @@ v: all
 	valgrind  --track-origins=yes --leak-check=full --log-file="valgrind.log" $(BIN)
 
 clean: 
-	rm -fr build
+	rm -fr build *.log
 
 print:
 	echo $(C_FILES)
