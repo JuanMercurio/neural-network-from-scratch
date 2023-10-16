@@ -104,6 +104,8 @@ float mse(NeuralNetwork *nn, Matrix *X, Matrix *Y) {
   }
 
   error /= prediction->cols;
+
+  matrix_free(prediction);
   return error;
 }
 
@@ -111,10 +113,12 @@ float calculate_loss(NeuralNetwork *nn, Matrix *inputs, Matrix *targets) {
 
   float network_error = 0;
   for (int i = 0; i < inputs->rows; i++) {
-    Matrix *input = matrix_get_rows(inputs, i, 1);
-    Matrix *target = matrix_get_rows(targets, i, 1);
+    Matrix *input = matrix_get_rows(inputs, i, i + 1);
+    Matrix *target = matrix_get_rows(targets, i, i + 1);
     network_error += nn->loss_function(nn, input, target);
     // network_error += mse(nn, input, target);
+    matrix_free(input);
+    matrix_free(target);
   }
 
   network_error /= targets->rows;
@@ -375,6 +379,32 @@ NeuralNetwork *neural_network_create(int layers[], int len_layers,
   }
 
   return nn;
+}
+
+void NN_set_loss_function(NeuralNetwork *nn, LossFunction function) {
+  switch (function) {
+  case MSE:
+    nn->loss_function = mse;
+  case CROSS_ENTROPY:
+    nn->loss_function = mse; // todo: create coss_entropy
+  }
+}
+
+void NN_set_layer_activation(NeuralNetwork *nn, Activations function,
+                             int layer) {
+  switch (function) {
+  case RELU:
+    nn->activators[layer] = relu;
+    nn->activators_derivatives[layer] = relu_derivative;
+
+  case SIGMOID:
+    nn->activators[layer] = sigmoid;
+    nn->activators_derivatives[layer] = sigmoid_derivative;
+  case SOFTMAX:
+    // todo
+    //  nn->activators[layer] = softmax;
+    //  nn->activators_derivatives[layer] = softmax_derivative;
+  }
 }
 
 void NN_free_weights(NeuralNetwork nn) {

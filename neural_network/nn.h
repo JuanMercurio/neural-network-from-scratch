@@ -3,6 +3,9 @@
 
 #include "../matrix/matrix.h"
 
+typedef float (*ActivationFunction)(float x);
+typedef float (*ActivationDerivativeFunction)(float x);
+
 typedef struct NeuralNetwork NeuralNetwork;
 
 struct NeuralNetwork {
@@ -11,7 +14,20 @@ struct NeuralNetwork {
   char *desc;
   float learning_rate;
   float (*loss_function)(NeuralNetwork *nn, Matrix* Y, Matrix * target );
+  ActivationFunction *activators;
+  ActivationDerivativeFunction *activators_derivatives;
 };
+
+typedef enum LossFunction {
+  MSE,
+  CROSS_ENTROPY,
+} LossFunction;
+
+typedef enum Activations {
+  SIGMOID,
+  SOFTMAX,
+  RELU,
+} Activations;
 
 NeuralNetwork *neural_network_create(int layers[], int len_layers,
                                      float learning_rate);
