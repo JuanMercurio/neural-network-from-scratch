@@ -7,6 +7,7 @@ int main() {
 
   float learning_rate = 0.2;
   int epochs = 20000;
+  // int epochs = 1;
   int display_update = 200;
 
   // Matrix *inputs = mnist_get_input_data();
@@ -34,6 +35,9 @@ int main() {
   int len_layers = sizeof(layers) / sizeof(layers[0]);
 
   NeuralNetwork *nn = neural_network_create(layers, len_layers, learning_rate);
+  NN_set_layer_activation(nn, 1, SIGMOID);
+  NN_set_layer_activation(nn, 2, SIGMOID);
+
   fit(nn, inputs, outputs, epochs, display_update);
 
   print_desc(nn);

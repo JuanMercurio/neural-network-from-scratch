@@ -7,7 +7,7 @@
 
 #include "nn.h"
 
-int print;
+int print = 0;
 
 void list_forEach(Matrix **list, int size, void (*procedure)(Matrix *)) {
   for (int i = 0; i < size; i++) {
@@ -155,7 +155,7 @@ Matrix **NN_create_activations(NeuralNetwork *nn, int activation_count,
   for (int i = 0; i < nn->matrix_weight_count; i++) {
 
     Matrix *net = matrix_dot(activations[i], nn->list_weights[i]);
-    Matrix *out = matrix_transform(net, sigmoid);
+    Matrix *out = matrix_transform(net, nn->activators[i]);
     matrix_free(net);
     // Matrix *out = matrix_transform(net, relu);
 
@@ -185,8 +185,10 @@ Matrix **NN_create_deltas(NeuralNetwork *nn, Matrix **activations,
 
   Matrix **deltas = malloc(deltas_size);
 
-  Matrix *d = matrix_element_operation(activations[nn->matrix_weight_count],
-                                       sigmoid_derivative);
+  Matrix *d = matrix_element_operation(
+      activations[nn->matrix_weight_count],
+      nn->activators_derivatives[activation_count - 1 - 1]);
+  // sigmoid_derivative);
   // Matrix *d =
   // matrix_operation_single(nn->activations[nn->matrix_weight_count],
   //                                     relu_derivative);
@@ -374,6 +376,17 @@ NeuralNetwork *neural_network_create(int layers[], int len_layers,
   nn->matrix_weight_count = count_matrix;
   nn->loss_function = mse;
 
+  nn->activators = malloc(sizeof(ActivationFunction) * (len_layers - 1));
+  for (int i = 0; i < len_layers - 1; i++) {
+    nn->activators[i] = sigmoid;
+  }
+
+  nn->activators_derivatives =
+      malloc(sizeof(ActivationDerivativeFunction) * (len_layers - 1));
+  for (int i = 0; i < len_layers - 1; i++) {
+    nn->activators_derivatives[i] = sigmoid_derivative;
+  }
+
   if (print == 1) {
     print_weights(nn);
   }
@@ -390,20 +403,31 @@ void NN_set_loss_function(NeuralNetwork *nn, LossFunction function) {
   }
 }
 
-void NN_set_layer_activation(NeuralNetwork *nn, Activations function,
-                             int layer) {
+void NN_set_layer_activation(NeuralNetwork *nn, int layer,
+                             Activations function) {
+
+  if (layer == 0) {
+    printf("Cant set activation function to the inputs\n");
+    fflush(stdout);
+    abort();
+  }
+
   switch (function) {
   case RELU:
-    nn->activators[layer] = relu;
-    nn->activators_derivatives[layer] = relu_derivative;
+    nn->activators[layer - 1] = relu;
+    nn->activators_derivatives[layer - 1] = relu_derivative;
+    break;
 
   case SIGMOID:
-    nn->activators[layer] = sigmoid;
-    nn->activators_derivatives[layer] = sigmoid_derivative;
+    nn->activators[layer - 1] = sigmoid;
+    nn->activators_derivatives[layer - 1] = sigmoid_derivative;
+    break;
+
   case SOFTMAX:
     // todo
     //  nn->activators[layer] = softmax;
     //  nn->activators_derivatives[layer] = softmax_derivative;
+    //  break;
   }
 }
 

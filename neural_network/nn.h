@@ -36,5 +36,6 @@ void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
          int display_update) ;
 void print_desc(NeuralNetwork *nn);
 void NN_free(NeuralNetwork *nn);
+void NN_set_layer_activation(NeuralNetwork *nn, int layer, Activations act);
 
 #endif // !_NN_H_
