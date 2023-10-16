@@ -7,7 +7,7 @@ float times(float x, float y) { return x * y; }
 float add(float x, float y) { return x + y; }
 float identity(float x) { return x; }
 float substract(float a, float b) { return a - b; }
-float zero(float z) { return 0; }
+float zero(float z) { return 0 * z; }
 
 Matrix *matrix_create(int row_count, int col_count) {
   Matrix *matrix = calloc(1, sizeof(Matrix));
@@ -59,7 +59,7 @@ void matrix_add_column(Matrix *m, int value) {
 void matrix_print(Matrix *m) {
   for (int j = 0; j < m->rows; j++) {
     for (int k = 0; k < m->cols; k++) {
-      printf("%-10g ", m->data[j][k]);
+      printf("%-3g ", m->data[j][k]);
     }
     printf("\n");
   }
