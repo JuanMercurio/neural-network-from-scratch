@@ -5,9 +5,8 @@
 // int main(int argc, char *argv[]) {
 int main() {
 
-  float learning_rate = 0.3;
+  float learning_rate = 0.5;
   int epochs = 20000;
-  // int epochs = 1;
   int display_update = 200;
 
   Matrix *inputs = matrix_create(4, 2);

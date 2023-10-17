@@ -76,7 +76,7 @@ float relu(float x) {
 }
 
 float relu_derivative_single(float x) {
-  if (x > 0)
+  if (x >= 0)
     return 1;
   else
     return 0;
@@ -242,7 +242,7 @@ void NN_udpate_weights(NeuralNetwork *nn, Matrix **activations,
 
     Matrix *final_change = matrix_scale(dot, -nn->learning_rate);
     if (print == 1) {
-      printf("final changes to weights");
+      printf("final changes to weights\n");
       matrix_print(final_change);
     }
     matrix_add_inplace(nn->list_weights[i], final_change);
