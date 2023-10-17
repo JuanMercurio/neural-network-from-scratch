@@ -63,8 +63,8 @@ void weights_initilize(Matrix *matrix) {
 float sigmoid(float x) { return 1.0 / (1.0 + exp(-x)); }
 float sigmoid_derivative_single(float x) { return x * (1 - x); }
 
-Matrix *sigmoid_derivative(Matrix *z) {
-  Matrix *final = matrix_element_operation(z, sigmoid_derivative_single);
+Matrix *sigmoid_derivative(Matrix *A) {
+  Matrix *final = matrix_element_operation(A, sigmoid_derivative_single);
   return final;
 }
 
@@ -405,8 +405,10 @@ void NN_set_loss_function(NeuralNetwork *nn, LossFunction function) {
   switch (function) {
   case MSE:
     nn->loss_function = mse;
+    break;
   case CROSS_ENTROPY:
     nn->loss_function = mse; // todo: create coss_entropy
+    break;
   }
 }
 

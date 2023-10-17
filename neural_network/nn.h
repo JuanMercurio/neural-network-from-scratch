@@ -3,8 +3,8 @@
 
 #include "../matrix/matrix.h"
 
-typedef float (*ActivationFunction)(float x);
-typedef Matrix* (*ActivationDerivativeFunction)(Matrix* z);
+typedef float (*ActivationFunction)(float z);
+typedef Matrix* (*ActivationDerivativeFunction)(Matrix* A);
 
 typedef struct NeuralNetwork NeuralNetwork;
 
@@ -14,6 +14,7 @@ struct NeuralNetwork {
   char *desc;
   float learning_rate;
   float (*loss_function)(NeuralNetwork *nn, Matrix* Y, Matrix * target );
+  Matrix** Zs;
   ActivationFunction *activators;
   ActivationDerivativeFunction *activators_derivatives;
 };
