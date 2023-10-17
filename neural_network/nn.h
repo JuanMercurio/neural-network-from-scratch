@@ -4,7 +4,7 @@
 #include "../matrix/matrix.h"
 
 typedef float (*ActivationFunction)(float x);
-typedef float (*ActivationDerivativeFunction)(float x);
+typedef Matrix* (*ActivationDerivativeFunction)(Matrix* z);
 
 typedef struct NeuralNetwork NeuralNetwork;
 
@@ -37,5 +37,6 @@ void fit(NeuralNetwork *nn, Matrix *inputs, Matrix *outputs, int epochs,
 void print_desc(NeuralNetwork *nn);
 void NN_free(NeuralNetwork *nn);
 void NN_set_layer_activation(NeuralNetwork *nn, int layer, Activations act);
+void NN_set_loss_function(NeuralNetwork *nn, LossFunction function);
 
 #endif // !_NN_H_

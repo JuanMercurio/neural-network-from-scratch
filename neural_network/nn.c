@@ -61,7 +61,12 @@ void weights_initilize(Matrix *matrix) {
 }
 
 float sigmoid(float x) { return 1.0 / (1.0 + exp(-x)); }
-float sigmoid_derivative(float x) { return x * (1 - x); }
+float sigmoid_derivative_single(float x) { return x * (1 - x); }
+
+Matrix *sigmoid_derivative(Matrix *z) {
+  Matrix *final = matrix_element_operation(z, sigmoid_derivative_single);
+  return final;
+}
 
 float relu(float x) {
   if (x > 0)
@@ -70,11 +75,16 @@ float relu(float x) {
     return 0;
 }
 
-float relu_derivative(float x) {
+float relu_derivative_single(float x) {
   if (x > 0)
     return 1;
   else
     return 0;
+}
+
+Matrix *relu_derivative(Matrix *z) {
+  Matrix *final = matrix_element_operation(z, relu_derivative_single);
+  return final;
 }
 
 Matrix *predict(NeuralNetwork *, Matrix *);
@@ -141,8 +151,6 @@ void suffle_data(Matrix *m, Matrix *m2) {
   }
 }
 
-// this can reuse memory and be more optimal (as well as continuous memory in
-// all matrix)
 Matrix **NN_create_activations(NeuralNetwork *nn, int activation_count,
                                Matrix *input) {
 
@@ -185,18 +193,13 @@ Matrix **NN_create_deltas(NeuralNetwork *nn, Matrix **activations,
 
   Matrix **deltas = malloc(deltas_size);
 
-  Matrix *d = matrix_element_operation(
-      activations[nn->matrix_weight_count],
-      nn->activators_derivatives[activation_count - 1 - 1]);
-  // sigmoid_derivative);
-  // Matrix *d =
-  // matrix_operation_single(nn->activations[nn->matrix_weight_count],
-  //                                     relu_derivative);
-  // Matrix *delta =
-  // matrix_element_to_element_operation(d, error_derivative, times);
+  Matrix *d = nn->activators_derivatives[nn->matrix_weight_count - 1](
+      activations[nn->matrix_weight_count]);
+
   Matrix *delta = matrix_times(d, error_derivative);
   matrix_free(error_derivative);
   matrix_free(d);
+
   deltas[0] = delta;
 
   for (int i = 0; i < activation_count - 2; i++) {
@@ -204,8 +207,13 @@ Matrix **NN_create_deltas(NeuralNetwork *nn, Matrix **activations,
     Matrix *transpose_weight =
         matrix_transpose(nn->list_weights[nn->matrix_weight_count - i - 1]);
     Matrix *delta = matrix_dot(deltas[i], transpose_weight);
-    Matrix *d = matrix_element_operation(activations[activation_count - 2 - i],
-                                         sigmoid_derivative);
+
+    Matrix *d = nn->activators_derivatives[nn->matrix_weight_count - 1 - 1 - i](
+        activations[nn->matrix_weight_count - 1 - i]);
+
+    // Matrix *d = nn->activators_derivatives[nn->matrix_weight_count - 1 -
+    // 1 - i](
+    //     activations[activation_count - 2 - i]);
     // nn->activations[activation_count - 2 - i], relu_derivative);
     // delta = matrix_element_to_element_operation(delta, d, times);
     Matrix *new_delta = matrix_times(delta, d);
@@ -374,18 +382,17 @@ NeuralNetwork *neural_network_create(int layers[], int len_layers,
   nn->list_weights = weights;
   nn->learning_rate = learning_rate;
   nn->matrix_weight_count = count_matrix;
-  nn->loss_function = mse;
 
   nn->activators = malloc(sizeof(ActivationFunction) * (len_layers - 1));
-  for (int i = 0; i < len_layers - 1; i++) {
-    nn->activators[i] = sigmoid;
-  }
+  // for (int i = 0; i < len_layers - 1; i++) {
+  //   nn->activators[i] = sigmoid;
+  // }
 
   nn->activators_derivatives =
       malloc(sizeof(ActivationDerivativeFunction) * (len_layers - 1));
-  for (int i = 0; i < len_layers - 1; i++) {
-    nn->activators_derivatives[i] = sigmoid_derivative;
-  }
+  // for (int i = 0; i < len_layers - 1; i++) {
+  //   nn->activators_derivatives[i] = sigmoid_derivative;
+  // }
 
   if (print == 1) {
     print_weights(nn);
@@ -427,7 +434,7 @@ void NN_set_layer_activation(NeuralNetwork *nn, int layer,
     // todo
     //  nn->activators[layer] = softmax;
     //  nn->activators_derivatives[layer] = softmax_derivative;
-    //  break;
+    break;
   }
 }
 
@@ -440,6 +447,8 @@ void NN_free_weights(NeuralNetwork nn) {
 
 void NN_free(NeuralNetwork *nn) {
   free(nn->desc);
+  free(nn->activators_derivatives);
+  free(nn->activators);
   NN_free_weights(*nn);
   free(nn);
   nn = NULL;

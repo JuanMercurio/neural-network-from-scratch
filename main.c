@@ -5,13 +5,10 @@
 // int main(int argc, char *argv[]) {
 int main() {
 
-  float learning_rate = 0.2;
+  float learning_rate = 0.3;
   int epochs = 20000;
   // int epochs = 1;
   int display_update = 200;
-
-  // Matrix *inputs = mnist_get_input_data();
-  // Matrix *outputs = mnist_get_output_data();
 
   Matrix *inputs = matrix_create(4, 2);
   inputs->data[0][0] = 0;
@@ -37,6 +34,7 @@ int main() {
   NeuralNetwork *nn = neural_network_create(layers, len_layers, learning_rate);
   NN_set_layer_activation(nn, 1, SIGMOID);
   NN_set_layer_activation(nn, 2, SIGMOID);
+  NN_set_loss_function(nn, MSE);
 
   fit(nn, inputs, outputs, epochs, display_update);
 
