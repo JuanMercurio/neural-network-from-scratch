@@ -49,7 +49,7 @@ Matrix *mnist_get_output_data() {
   fseek(file, 0, SEEK_SET);
 
   Matrix *outputs = malloc(sizeof(Matrix *));
-  outputs->rows = i;
+  outputs->rows = i - 1;
   outputs->cols = 10;
   outputs->data = malloc(sizeof(float *) * i);
 
@@ -86,7 +86,7 @@ Matrix *mnist_get_input_data() {
 
   Matrix *inputs = malloc(sizeof(Matrix *));
   inputs->cols = 28 * 28;
-  inputs->rows = i;
+  inputs->rows = i - 1;
   inputs->data = malloc(sizeof(float *) * i);
 
   if (inputs == NULL)

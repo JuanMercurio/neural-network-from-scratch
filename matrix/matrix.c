@@ -40,7 +40,7 @@ void matrix_add_inplace(Matrix *to_update, Matrix *updater) {
   matrix_inplace_element_to_element_operation(to_update, updater, add);
 }
 
-Matrix *matrix_substract(Matrix *m1, Matrix *m2) {
+Matrix *matrix_subtract(Matrix *m1, Matrix *m2) {
   return matrix_element_to_element_operation(m1, m2, substract);
 }
 

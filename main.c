@@ -24,8 +24,6 @@ int main() {
   outputs->data[2][0] = 1;
   outputs->data[3][0] = 0;
 
-  // we need on hidden relu and on the last softmax
-  // int layers[] = {inputs->cols, 10, 10, outputs->cols};
   int layers[] = {2, 2, 1};
 
   int len_layers = sizeof(layers) / sizeof(layers[0]);

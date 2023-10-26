@@ -63,8 +63,43 @@ void weights_initilize(Matrix *matrix) {
 float sigmoid(float x) { return 1.0 / (1.0 + exp(-x)); }
 float sigmoid_derivative_single(float x) { return x * (1 - x); }
 
+Matrix *mse_derivative(Matrix *prediction, Matrix *target) {
+  return matrix_subtract(prediction, target);
+}
+
 Matrix *sigmoid_derivative(Matrix *A) {
   Matrix *final = matrix_element_operation(A, sigmoid_derivative_single);
+  return final;
+}
+
+float euler(float a) { return (float)exp(a); }
+
+Matrix *softmax(Matrix *z) {
+  float denominator = 0;
+  for (int i = 0; i < z->cols; i++) {
+    denominator += exp(z->data[0][i]);
+  }
+
+  Matrix *numerator = matrix_transform(z, euler);
+  Matrix *probability = matrix_scale(numerator, 1.0 / denominator);
+  free(numerator);
+
+  return probability;
+}
+
+float one(float a) { return 1 * a / a; }
+
+Matrix *softmax_derivative(Matrix *A) {
+
+  Matrix *probability = softmax(A);
+  Matrix *ones = matrix_create(A->rows, A->cols);
+  matrix_inplace_element_operation(ones, one); // fill with ones
+  Matrix *temp = matrix_subtract(ones, probability);
+  Matrix *final = matrix_times(probability, temp);
+
+  matrix_free(ones);
+  matrix_free(temp);
+
   return final;
 }
 
@@ -104,6 +139,38 @@ float *predict_list(NeuralNetwork *nn, Matrix *inputs) {
     matrix_free(pred);
   }
   return predictions;
+}
+
+float ln(float a) { return log(a); }
+
+// TODO Y not used
+float cross_entropy(NeuralNetwork *nn, Matrix *X, Matrix *Y) {
+  Matrix *prediction = predict(nn, X);
+  Matrix *probability = softmax(prediction);
+  Matrix *lns = matrix_transform(probability, ln);
+  Matrix *errors = matrix_scale(lns, -1);
+
+  matrix_free(probability);
+  matrix_free(lns);
+  matrix_free(prediction);
+
+  float error = 0;
+
+  for (int i = 0; i < prediction->cols; i++) {
+    error += errors->data[0][i];
+  }
+
+  return error;
+}
+
+// TODO
+Matrix *cross_entropy_derivative(Matrix *A) {
+  // Matrix *sd = softmax_derivative(A);
+  // Matrix *derivative = matrix_subtract(sd, A);
+
+  // this two lines are for no warnings
+  A = NULL;
+  return A;
 }
 
 float mse(NeuralNetwork *nn, Matrix *X, Matrix *Y) {
@@ -188,8 +255,8 @@ Matrix **NN_create_deltas(NeuralNetwork *nn, Matrix **activations,
                           int activation_count, Matrix *outputs) {
 
   int deltas_size = (activation_count - 1) * sizeof(Matrix *);
-  Matrix *error_derivative =
-      matrix_substract(activations[nn->matrix_weight_count], outputs);
+  Matrix *error_derivative = nn->loss_function_derivative(activations[nn->matrix_weight_count], outputs);
+  // matrix_subtract(activations[nn->matrix_weight_count], outputs);
 
   Matrix **deltas = malloc(deltas_size);
 
@@ -274,7 +341,7 @@ Matrix *predict(NeuralNetwork *nn, Matrix *x) {
   return activations;
 }
 
-void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *outputs) {
+void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *output) {
 
   int activation_count = nn->matrix_weight_count + 1;
 
@@ -282,15 +349,14 @@ void fit_partial(NeuralNetwork *nn, Matrix *input, Matrix *outputs) {
   Matrix **activations = NN_create_activations(nn, activation_count, input);
 
   // back prop
-  Matrix **deltas =
-      NN_create_deltas(nn, activations, activation_count, outputs);
+  Matrix **deltas = NN_create_deltas(nn, activations, activation_count, output);
   NN_udpate_weights(nn, activations, deltas);
 
   // debug
   if (print == 1) {
     Matrix *prediction = predict(nn, input);
     printf("%f %f = %f | Predicted: %f\n", input->data[0][0], input->data[0][1],
-           outputs->data[0][0], prediction->data[0][0]);
+           output->data[0][0], prediction->data[0][0]);
   }
 
   list_free(activations, nn->matrix_weight_count + 1, matrix_free);
@@ -405,9 +471,10 @@ void NN_set_loss_function(NeuralNetwork *nn, LossFunction function) {
   switch (function) {
   case MSE:
     nn->loss_function = mse;
+    nn->loss_function_derivative = mse_derivative;
     break;
   case CROSS_ENTROPY:
-    nn->loss_function = mse; // todo: create coss_entropy
+    nn->loss_function = cross_entropy; // todo: create coss_entropy
     break;
   }
 }
