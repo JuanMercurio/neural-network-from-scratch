@@ -13,8 +13,8 @@ The master branch contains a version of the code that predicts the XOR function
 - [x] Options to choose Cost function (mnst branch)
 - [ ] Accept user created functions
 - [ ] Matrix load/save 
-- [ ] Batch learning (now we learn on each input)
-- [ ] Read csv (minst database)
+- [x] Read csv (minst database)
+- [ ] Analyze stochastic gd and batch
 
 ## Exquisite ToDo
 - [ ] Cache improvement
