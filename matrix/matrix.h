@@ -8,7 +8,7 @@ typedef struct {
 } Matrix;
 
 Matrix *matrix_create(int row_count, int col_count);
-Matrix *matrix_substract(Matrix *m1, Matrix *m2);
+Matrix *matrix_subtract(Matrix *m1, Matrix *m2);
 Matrix *matrix_dot(Matrix *m1, Matrix *m2);
 Matrix *matrix_times(Matrix*m1, Matrix* m2);
 Matrix *matrix_transform(Matrix *m, float (*transfomer)(float));

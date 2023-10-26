@@ -8,10 +8,10 @@ This is a repo in which I try to understand neural networks and build it from sc
 The master branch contains a version of the code that predicts the XOR function
 
 ## ToDo
-- [ ] Option to choose between activation functions on each layer
-	 - [ ] Accept user created functions
-- [ ] Options to choose Cost function
-	- [ ] Accept user created functions
+- [x] Option to choose between activation functions on each layer (mnst branch)
+- [ ] Accept user created functions
+- [x] Options to choose Cost function (mnst branch)
+- [ ] Accept user created functions
 - [ ] Matrix load/save 
 - [ ] Batch learning (now we learn on each input)
 - [ ] Read csv (minst database)

@@ -2,7 +2,7 @@ CC=gcc
 BUILD=./build/
 BIN=$(BUILD)test
 LIBRARIES= -lm -lstdc++
-FLAGS= -ggdb -pedantic -Wall
+FLAGS= -ggdb -pedantic -Wall -Wextra
 C_FILES= $(shell find . -type f -name "*.c" | tr "\n" " ")
 
 all:
@@ -20,7 +20,7 @@ v: all
 	valgrind  --track-origins=yes --leak-check=full --log-file="valgrind.log" $(BIN)
 
 clean: 
-	rm -fr build
+	rm -fr build *.log
 
 print:
 	echo $(C_FILES)
